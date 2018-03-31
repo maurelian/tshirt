@@ -1,4 +1,4 @@
-const { getAllFiles } = require('./utils.js');
+const { getAllFiles, countLinesInFile } = require('./utils.js');
 const fs = require('fs');
 // const asciiTable = require('ascii-table');
 
@@ -9,7 +9,7 @@ const fs = require('fs');
 //   * how many functions are non-state changing?
 // * Counting external calls:
 
-function solidityCounts(dir) {
+async function solidityCounts(dir) {
   let files = getAllFiles(dir);
   console.log(files);
   files = files
@@ -21,18 +21,17 @@ function solidityCounts(dir) {
   } else {
     console.log(`There are ${files.length} solidity files.`);
   }
-
+  debugger;
   let totalLines;
-  files.forEach((file) => {
-    fs.createReadStream(file).on('data', (chunk) => {
-      // split the chunk into an array of lines.
-      const numLines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
-      totalLines += numLines;
-      console.log(`${file} has ${lines.length - 1} lines.`);
-    });
-    // TODO: count the sum of all lines
-  });
+  for (const file of files){
+    let numLines = await countLinesInFile(file);
+    console.log(file);
+    console.log("index numLines", numLines);
+    totalLines += numLines;
+  };
+  console.log(totalLines);
 }
+
 
 module.exports = {
   solidityCounts,
