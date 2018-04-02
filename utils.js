@@ -1,4 +1,5 @@
 const fs = require('fs');
+const parser = require("solidity-parser-antlr");
 
 function getAllFiles(dir) {
   let results = [];
@@ -15,18 +16,16 @@ function getAllFiles(dir) {
 }
 
 function countLinesInFile(file){
-  new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     debugger;
     let numLines;
     fs.createReadStream(file).on('data', (chunk) => {
         // split the chunk into an array of lines.
         const lines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
-        console.log(`${file} has ${lines.length - 1} lines.`);
         numLines = lines.length-1;
-        resolve("numLines", numLines);
+        resolve(numLines);
       })
       .on('error', err => reject(err))
-      // .on('end', () => resolve("some lines", numLines));
   });
 };
 
