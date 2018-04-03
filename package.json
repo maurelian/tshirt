@@ -9,12 +9,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "solidity-parser-antlr": "^0.2.8",
-    "yargs": "^11.0.0"
+    "chalk": "2.3.2",
+    "solidity-parser-antlr": "0.2.8",
+    "yargs": "11.0.0"
   },
   "devDependencies": {
-    "eslint-config-airbnb": "^16.1.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.9.0"
+    "eslint-config-airbnb": "16.1.0",
+    "eslint-config-airbnb-base": "12.1.0",
+    "eslint-plugin-import": "2.9.0"
   }
 }
