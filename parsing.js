@@ -2,7 +2,11 @@ const fs = require('fs');
 const parser = require('solidity-parser-antlr');
 
 
-function getFunctionsInContracts(file) {
+/**
+ * Takes a file path
+ * Returns an array of functions
+ */
+function getFunctionsInContract(file) {
   const input1 = fs.readFileSync(file).toString();
   const ast = parser.parse(input1.toString());
 
@@ -28,5 +32,5 @@ function getFunctionsInContracts(file) {
 // console.log(getFunctionsInContracts('./test/contracts/eip20/EIP20.sol'));
 
 module.exports = {
-  getFunctionsInContracts,
+  getFunctionsInContract,
 };

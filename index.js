@@ -3,13 +3,74 @@ const { getFunctionsInContracts } = require('./parsing.js');
 const { log } = require('./color.js');
 // const asciiTable = require('ascii-table');
 
-// Functions in this file should return assembled reports
-// in an object or string format which can be printed by the
-// cli tool, or used by another tool
-module.exports.systemSummary = (contractsDir) => {
-  // handles both a contract and a directory
-  console.log('systemSummary', contractsDir);
+/*
+  Functions in this file should return assembled reports
+  in an object which can be re-formatted and printed by the
+  cli tool, or used by another tool
+*/
+
+const System = class {
+  constructor(files) {
+    this.files = files;
+  }
+
+
+  fileCount() {
+    return this.files.length;
+  }
+
+  // functionSummary() {
+  //   const funcSummary = {
+
+  //   }
+  // }
 };
+
+/* Returns a system summary object, with the following schema:
+ *
+ * summary = {
+ *    files: [
+ *      { name: 'file1',
+ *        functions: [{..}, ..., {...}],
+ *        lineCount: 75,
+ *      },
+ *      {},
+ *      ...
+ *      {}
+ *    ],
+ *    fileCount: 5,
+ *    derivedContracts: 2, // not yet sure how to determine this by parsing
+ *    // lower priority
+ *    functionSummary: {
+ *      totalCount: 20,
+ *      stateChanging: 11,
+ *      constant: 9
+ *    }
+ *   }
+ *
+ * @param {string} contractsDir A directory with solidity files in it
+ * @param {string} excludes Sub-directories to exclude from analysis
+ * @param {array}  derived A list of which contracts will be derived and deployed in the final system.
+ * 
+ */
+module.exports.systemSummary = (contractsDir, derived) => {
+  // handles both a contract and a directory
+  // console.log('systemSummary', contractsDir);
+  let files = getAllFiles(contractsDir);
+  files
+    .filter(file => file.split('/').pop() !== 'Migrations.sol')
+    .filter(file => file.split('.').pop() === 'sol');
+
+  let summary = new Summary(files);
+
+  summary.fileCount = files.length;
+  // summary.derivedContractsCount = derived.length;
+
+  // getFunctionsInContracts()
+
+  return summary;
+};
+
 
 module.exports.generateFileSummary = (contractsDir) => {
   // handles both a contract and a directory

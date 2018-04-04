@@ -1,6 +1,8 @@
 const fs = require('fs');
-const parser = require("solidity-parser-antlr");
 
+/**
+ * Returns an array of relative paths to files
+ */
 function getAllFiles(dir) {
   let results = [];
 
@@ -15,22 +17,20 @@ function getAllFiles(dir) {
   return results;
 }
 
-function countLinesInFile(file){
+function countLinesInFile(file) {
   return new Promise((resolve, reject) => {
-    debugger;
     let numLines;
     fs.createReadStream(file).on('data', (chunk) => {
-        // split the chunk into an array of lines.
-        const lines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
-        numLines = lines.length-1;
-        resolve(numLines);
-      })
-      .on('error', err => reject(err))
+      // split the chunk into an array of lines.
+      const lines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
+      numLines = lines.length-1;
+      resolve(numLines);
+    }).on('error', err => reject(err))
   });
-};
+}
 
 
 module.exports = {
   getAllFiles,
-  countLinesInFile
+  countLinesInFile,
 };
