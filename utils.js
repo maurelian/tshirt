@@ -17,15 +17,15 @@ function getAllFiles(dir) {
   return results;
 }
 
-function countLinesInFile(file) {
+function countLinesInFile(fileName) {
   return new Promise((resolve, reject) => {
     let numLines;
-    fs.createReadStream(file).on('data', (chunk) => {
+    fs.createReadStream(fileName).on('data', (chunk) => {
       // split the chunk into an array of lines.
       const lines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
-      numLines = lines.length-1;
+      numLines = lines.length - 1;
       resolve(numLines);
-    }).on('error', err => reject(err))
+    }).on('error', err => reject(err));
   });
 }
 

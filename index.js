@@ -1,88 +1,127 @@
 const { getAllFiles, countLinesInFile } = require('./utils.js');
-const { getFunctionsInContracts } = require('./parsing.js');
+const { getFunctionsInContract } = require('./parsing.js');
 const { log } = require('./color.js');
-// const asciiTable = require('ascii-table');
+const fs = require('fs');
+const AsciiTable = require('ascii-table');
 
-/*
-  Functions in this file should return assembled reports
-  in an object which can be re-formatted and printed by the
-  cli tool, or used by another tool
-*/
-
-const System = class {
-  constructor(files) {
-    this.files = files;
+/**
+ * The FileSummary class is contains data pertaining to a given file
+ * * @param {string} path The path to a file.
+ */
+const FileSummary = class {
+  constructor(path) {
+    if (fs.statSync(path).isDirectory()) { throw new Error('expected a file, got a directory.'); }
+    this.name = path;
+    this.functions = getFunctionsInContract(path);
+    this.lines = countLinesInFile(path);
   }
 
-
-  fileCount() {
-    return this.files.length;
+  // getter for aggregating numbers
+  getFunctionCounts() {
+    const totalCount = this.functions.length;
+    let stateChangingFunctions = 0;
+    let constantFunctions = 0;
+    this.functions.forEach((func) => {
+      if (['view', 'pure', 'constant'].indexOf(func.stateMutability) > -1) {
+        constantFunctions += 1;
+      } else {
+        stateChangingFunctions += 1;
+      }
+    });
+    return { totalCount, stateChangingFunctions, constantFunctions };
   }
-
-  // functionSummary() {
-  //   const funcSummary = {
-
-  //   }
-  // }
 };
 
-/* Returns a system summary object, with the following schema:
- *
- * summary = {
- *    files: [
- *      { name: 'file1',
- *        functions: [{..}, ..., {...}],
- *        lineCount: 75,
- *      },
- *      {},
- *      ...
- *      {}
- *    ],
- *    fileCount: 5,
- *    derivedContracts: 2, // not yet sure how to determine this by parsing
- *    // lower priority
- *    functionSummary: {
- *      totalCount: 20,
- *      stateChanging: 11,
- *      constant: 9
- *    }
- *   }
+/**
+ * SystemSummary class contains data pertaining to all the contracts in a system
+ * * @param {array} fileSummarysArray An array of FileSummary objects
+ */
+const SystemSummary = class {
+  constructor(fileSummarysArray) {
+    this.files = fileSummarysArray;
+    this.fileCount = fileSummarysArray.length;
+  };
+
+  getFunctionCounts() {
+    // create a summary of function data
+    const functionCounts = {
+      totalCount: 0,
+      stateChangingFunctions: 0,
+      constantFunctions: 0,
+    };
+
+    this.files.forEach((file) => {
+      const { totalCount, stateChangingFunctions, constantFunctions }
+        = file.getFunctionCounts();
+      functionCounts.totalCount += totalCount;
+      functionCounts.stateChangingFunctions += stateChangingFunctions;
+      functionCounts.constantFunctions += constantFunctions;
+    });
+    return functionCounts;
+  }
+};
+
+/* Returns a system summary object
  *
  * @param {string} contractsDir A directory with solidity files in it
  * @param {string} excludes Sub-directories to exclude from analysis
- * @param {array}  derived A list of which contracts will be derived and deployed in the final system.
- * 
+ * @param {array}  TODO: derived A list of which contracts will be derived and
+ *                         deployed in the final system.
+ *
  */
-module.exports.systemSummary = (contractsDir, derived) => {
-  // handles both a contract and a directory
-  // console.log('systemSummary', contractsDir);
-  let files = getAllFiles(contractsDir);
-  files
-    .filter(file => file.split('/').pop() !== 'Migrations.sol')
-    .filter(file => file.split('.').pop() === 'sol');
+const generateSystemSummary = (contractsDir) => {
+  const files = getAllFiles(contractsDir)
+    .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
+    .filter(fileName => fileName.split('.').pop() === 'sol');
 
-  let summary = new Summary(files);
+  const fileSummaryArray = [];
+  files.forEach((fileName) => {
+    const fileSummary = new FileSummary(fileName);
+    fileSummaryArray.push(fileSummary);
+  });
 
-  summary.fileCount = files.length;
-  // summary.derivedContractsCount = derived.length;
-
-  // getFunctionsInContracts()
-
-  return summary;
+  return new SystemSummary(fileSummaryArray);
 };
 
-
-module.exports.generateFileSummary = (contractsDir) => {
+/**
+ * Generates a summary for a file, or array of files
+ * @param  {string} contractsDir The path to a file or directory
+ * @return {array}  An array with an object for each file
+ */
+const generateFileSummary = (path) => {
   // handles both a contract and a directory
-  console.log('generateFileSummary', contractsDir);
+  const dirStats = fs.statSync(path);
+  const summaries = [];
+  if (!dirStats.isDirectory()) {
+    // it's actually just a files
+    summaries.push(new FileSummary(path));
+  } else {
+    const files = getAllFiles(path)
+      .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
+      .filter(fileName => fileName.split('.').pop() === 'sol');
+
+    files.forEach((file) => {
+      summaries.push(new FileSummary(file));
+    });
+  }
+  return summaries;
+  // console.log('generateFileSummary', contractsDir);
 };
 
-module.exports.generateDashboard = (contractsDir) => {
+// const writeFileTable = (path) => {
+//   const summary = generateFileSummary(path);
+
+//   const table = new AsciiTable();
+//   table
+// };
+
+
+const generateDashboard = (contractsDir) => {
   // handles both a contract and a directory
   console.log('generateDashboard', contractsDir);
 };
 
-module.exports.solidityCounts = async (dir) => {
+const solidityCounts = async (dir) => {
   let files = getAllFiles(dir);
   files = files
     .filter(file => file.split('/').pop() !== 'Migrations.sol')
@@ -109,7 +148,7 @@ module.exports.solidityCounts = async (dir) => {
 
   files.forEach((file) => {
     log.yellow(`### Functions in ${file}:`);
-    const funcArray = getFunctionsInContracts(file);
+    const funcArray = getFunctionsInContract(file);
     funcArray.forEach((func) => {
       console.log(`Name: ${func.name}, Visibility: ${func.visibility}, Modifiers: ${func.modifiers}`);
     });
@@ -118,3 +157,10 @@ module.exports.solidityCounts = async (dir) => {
   });
 };
 
+module.exports = {
+  generateSystemSummary,
+  generateFileSummary,
+  writeFileTable,
+  generateDashboard,
+  solidityCounts,
+};
