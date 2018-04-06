@@ -11,7 +11,7 @@ const AsciiTable = require('ascii-table');
 const FileSummary = class {
   constructor(path) {
     if (fs.statSync(path).isDirectory()) { throw new Error('expected a file, got a directory.'); }
-    this.name = path;
+    this.name = path.split('/').pop();
     this.functions = getFunctionsInContract(path);
     this.lines = countLinesInFile(path);
   }
@@ -42,22 +42,28 @@ const SystemSummary = class {
     this.fileCount = fileSummarysArray.length;
   };
 
+  getLineCount() {
+    let numlines = 0;
+    this.files.forEach((file) => {
+      numlines += file.lines;
+      console.log(file.lines);
+    });
+    return numlines;
+  }
+
   getFunctionCounts() {
     // create a summary of function data
-    const functionCounts = {
-      totalCount: 0,
-      stateChangingFunctions: 0,
-      constantFunctions: 0,
-    };
+    let totalCount = 0;
+    let stateChangingFunctions = 0;
+    let constantFunctions = 0;
 
     this.files.forEach((file) => {
-      const { totalCount, stateChangingFunctions, constantFunctions }
-        = file.getFunctionCounts();
-      functionCounts.totalCount += totalCount;
-      functionCounts.stateChangingFunctions += stateChangingFunctions;
-      functionCounts.constantFunctions += constantFunctions;
+      const functionCounts = file.getFunctionCounts();
+      totalCount += functionCounts.totalCount;
+      stateChangingFunctions += functionCounts.stateChangingFunctions;
+      constantFunctions += functionCounts.constantFunctions;
     });
-    return functionCounts;
+    return { totalCount, stateChangingFunctions, constantFunctions };
   }
 };
 
@@ -108,12 +114,47 @@ const generateFileSummary = (path) => {
   // console.log('generateFileSummary', contractsDir);
 };
 
-// const writeFileTable = (path) => {
-//   const summary = generateFileSummary(path);
+const rowOfDashes = (lengths) => {
+  let row = [];
+  lengths.forEach((length) => {
+    let line = '';
+    for (let i=0; i < length; i++) {
+      line += '-';
+    }
+    row.push(line);
+  });
+  return row;
+};
 
-//   const table = new AsciiTable();
-//   table
-// };
+/**
+ *
+ * @param  {[type]} path [description]
+ * @return {[type]}      [description]
+ */
+const writeSystemTable = (path) => {
+  const system = generateSystemSummary(path);
+
+  const table = new AsciiTable();
+  table.setHeading('File Name', 'Functions', 'State Changing', 'Constant', 'Lines');
+
+  // write the row for each file
+  system.files.forEach((file) => {
+    const counts = file.getFunctionCounts();
+    table.addRow(file.name, counts.totalCount, counts.stateChangingFunctions,
+      counts.constantFunctions, file.lines);
+  });
+
+  // add another dashed line, followed by the totals
+  table.toString(); // the __colMaxes data we need isn't populated until this is called.
+  const dashes = rowOfDashes(table.__colMaxes);
+  table.addRow(dashes);
+
+  const totals = system.getFunctionCounts();
+  table.addRow('Totals', totals.totalCount, totals.stateChangingFunctions,
+    totals.constantFunctions, system.getLineCount());
+
+  console.log(table.toString());
+};
 
 
 const generateDashboard = (contractsDir) => {
@@ -125,6 +166,6 @@ const generateDashboard = (contractsDir) => {
 module.exports = {
   generateSystemSummary,
   generateFileSummary,
-  writeFileTable,
+  writeSystemTable,
   generateDashboard,
 };

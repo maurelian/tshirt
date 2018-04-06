@@ -6,7 +6,7 @@ const { argv } = require('yargs');
 // const path = argv._[argIndex]; // argv puts the final arguments in an array named "_"
 
 if (argv.summary) {
-  tshirt.systemSummary(argv.summary);
+  tshirt.writeSystemTable(argv.summary);
 } else if (argv.each) {
   tshirt.generateFileSummary(argv.each);
 } else if (argv.dash) {

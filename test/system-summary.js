@@ -25,6 +25,7 @@ describe('tshirt.generateSystemSummary', () => {
       assert(file.name.split('/').pop() !== 'Migrations.sol');
       assert(file.name.split('.').pop() === 'sol');
     });
+    console.log(summary);
   });
 
   it('Provides a count of functions, and mutability in the system', () => {
@@ -33,6 +34,5 @@ describe('tshirt.generateSystemSummary', () => {
     assert(counts.stateChangingFunctions > 0);
     assert(counts.constantFunctions > 0);
     assert(counts.totalCount === counts.stateChangingFunctions + counts.constantFunctions);
-    // console.log(summary);
   });
 });

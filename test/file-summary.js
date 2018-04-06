@@ -29,7 +29,7 @@ describe('tshirt.generateFileSummary()', () => {
       assert(file.name.split('/').pop() !== 'Migrations.sol');
       assert(file.name.split('.').pop() === 'sol');
     });
-    console.log(summary)
+    // console.log(summary)
   });
 
   it('Provides a count of functions, and mutability', () => {
