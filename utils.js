@@ -25,7 +25,12 @@ function countLinesInFile(fileName) {
       const lines = chunk.toString('utf8').split(/\r\n|[\n\r\u0085\u2028\u2029]/g);
       numLines = lines.length - 1;
       resolve(numLines);
-    }).on('error', err => reject(err));
+    }).on('end', (result) => {
+      console.log('stream ended');
+      resolve(result);
+    }).on('error', (err) => {
+      reject(err);
+    });
   });
 }
 

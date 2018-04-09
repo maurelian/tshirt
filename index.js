@@ -11,9 +11,9 @@ const AsciiTable = require('ascii-table');
 const FileSummary = class {
   constructor(path) {
     if (fs.statSync(path).isDirectory()) { throw new Error('expected a file, got a directory.'); }
+    this.path = path;
     this.name = path.split('/').pop();
     this.functions = getFunctionsInContract(path);
-    this.lines = countLinesInFile(path);
   }
 
   // getter for aggregating numbers
