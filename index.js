@@ -42,15 +42,6 @@ const SystemSummary = class {
     this.fileCount = fileSummarysArray.length;
   };
 
-  getLineCount() {
-    let numlines = 0;
-    this.files.forEach((file) => {
-      numlines += file.lines;
-      console.log(file.lines);
-    });
-    return numlines;
-  }
-
   getFunctionCounts() {
     // create a summary of function data
     let totalCount = 0;
@@ -110,6 +101,7 @@ const generateFileSummary = (path) => {
       summaries.push(new FileSummary(file));
     });
   }
+  console.log(summaries);
   return summaries;
   // console.log('generateFileSummary', contractsDir);
 };
@@ -128,20 +120,31 @@ const rowOfDashes = (lengths) => {
 
 /**
  *
- * @param  {[type]} path [description]
+ * @param  {string} path [description]
+ * @param  {bool} showPath [description]
  * @return {[type]}      [description]
  */
-const writeSystemTable = (path) => {
+const writeSystemTable = (path, showPath) => {
+  showPath = true;
   const system = generateSystemSummary(path);
 
   const table = new AsciiTable();
-  table.setHeading('File Name', 'Functions', 'State Changing', 'Constant', 'Lines');
+  let headings = ['File Name', 'Functions', 'State Changing', 'Constant'];
+  if (showPath) {
+    headings = ['File Name', 'Path', 'Functions', 'State Changing', 'Constant'];
+  }
+  table.setHeading(headings);
 
   // write the row for each file
   system.files.forEach((file) => {
     const counts = file.getFunctionCounts();
-    table.addRow(file.name, counts.totalCount, counts.stateChangingFunctions,
-      counts.constantFunctions, file.lines);
+    if(showPath) {
+      table.addRow(file.name, file.path, counts.totalCount, counts.stateChangingFunctions,
+        counts.constantFunctions);
+    } else {
+      table.addRow(file.name, counts.totalCount, counts.stateChangingFunctions,
+        counts.constantFunctions);
+    }
   });
 
   // add another dashed line, followed by the totals
@@ -150,8 +153,16 @@ const writeSystemTable = (path) => {
   table.addRow(dashes);
 
   const totals = system.getFunctionCounts();
-  table.addRow('Totals', totals.totalCount, totals.stateChangingFunctions,
-    totals.constantFunctions, system.getLineCount());
+
+  let totalRow;
+  if (showPath) {
+    totalRow =
+      ['Totals', '--',totals.totalCount, totals.stateChangingFunctions, totals.constantFunctions];
+  } else {
+    totalRow = 
+      ['Totals', totals.totalCount, totals.stateChangingFunctions, totals.constantFunctions];
+  }
+  table.addRow(totalRow);
 
   console.log(table.toString());
 };
