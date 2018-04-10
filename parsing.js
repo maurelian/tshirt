@@ -29,8 +29,6 @@ function getFunctionsInContract(fileName) {
   return funcArray;
 }
 
-// console.log(getFunctionsInContract('./test/contracts/eip20/EIP20.sol'));
-
 module.exports = {
   getFunctionsInContract,
 };

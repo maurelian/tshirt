@@ -34,8 +34,20 @@ function countLinesInFile(fileName) {
   });
 }
 
+const rowOfDashes = (lengths) => {
+  let row = [];
+  lengths.forEach((length) => {
+    let line = '';
+    for (let i=0; i < length; i++) {
+      line += '-';
+    }
+    row.push(line);
+  });
+  return row;
+};
 
 module.exports = {
   getAllFiles,
   countLinesInFile,
+  rowOfDashes,
 };

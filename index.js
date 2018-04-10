@@ -1,4 +1,4 @@
-const { getAllFiles, countLinesInFile } = require('./utils.js');
+const { getAllFiles, countLinesInFile, rowOfDashes} = require('./utils.js');
 const { getFunctionsInContract } = require('./parsing.js');
 const { log } = require('./color.js');
 const fs = require('fs');
@@ -17,7 +17,7 @@ const FileSummary = class {
   }
 
   // getter for aggregating numbers
-  getFunctionCounts() {
+  get functionCounts() {
     const totalCount = this.functions.length;
     let stateChangingFunctions = 0;
     let constantFunctions = 0;
@@ -37,19 +37,21 @@ const FileSummary = class {
  * * @param {array} fileSummarysArray An array of FileSummary objects
  */
 const SystemSummary = class {
-  constructor(fileSummarysArray) {
-    this.files = fileSummarysArray;
-    this.fileCount = fileSummarysArray.length;
+  constructor(path) {
+    const solFiles = getSolidityFiles(path);
+    this.files = []; // an array of FileSummary objects
+    solFiles.forEach((solFile) => this.files.push(new FileSummary(solFile)));
+    this.fileCount = this.files.length;
   };
 
-  getFunctionCounts() {
+  get functionCounts() {
     // create a summary of function data
     let totalCount = 0;
     let stateChangingFunctions = 0;
     let constantFunctions = 0;
 
     this.files.forEach((file) => {
-      const functionCounts = file.getFunctionCounts();
+      const functionCounts = file.functionCounts;
       totalCount += functionCounts.totalCount;
       stateChangingFunctions += functionCounts.stateChangingFunctions;
       constantFunctions += functionCounts.constantFunctions;
@@ -58,93 +60,45 @@ const SystemSummary = class {
   }
 };
 
-/* Returns a system summary object
- *
- * @param {string} contractsDir A directory with solidity files in it
- * @param {string} excludes Sub-directories to exclude from analysis
- * @param {array}  TODO: derived A list of which contracts will be derived and
- *                         deployed in the final system.
- *
- */
-const generateSystemSummary = (contractsDir) => {
-  const files = getAllFiles(contractsDir)
-    .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
-    .filter(fileName => fileName.split('.').pop() === 'sol');
-
-  const fileSummaryArray = [];
-  files.forEach((fileName) => {
-    const fileSummary = new FileSummary(fileName);
-    fileSummaryArray.push(fileSummary);
-  });
-
-  return new SystemSummary(fileSummaryArray);
-};
 
 /**
  * Generates a summary for a file, or array of files
  * @param  {string} contractsDir The path to a file or directory
- * @return {array}  An array with an object for each file
+ * @return {array}  An array with a list of solidity files
  */
-const generateFileSummary = (path) => {
+const getSolidityFiles = (path) => {
   // handles both a contract and a directory
+  let files;
   const dirStats = fs.statSync(path);
-  const summaries = [];
   if (!dirStats.isDirectory()) {
-    // it's actually just a files
-    summaries.push(new FileSummary(path));
+    // it's actually just a file
+    files = [path];
   } else {
-    const files = getAllFiles(path)
+    files = getAllFiles(path)
       .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
       .filter(fileName => fileName.split('.').pop() === 'sol');
-
-    files.forEach((file) => {
-      summaries.push(new FileSummary(file));
-    });
   }
-  console.log(summaries);
-  return summaries;
-  // console.log('generateFileSummary', contractsDir);
-};
-
-const rowOfDashes = (lengths) => {
-  let row = [];
-  lengths.forEach((length) => {
-    let line = '';
-    for (let i=0; i < length; i++) {
-      line += '-';
-    }
-    row.push(line);
-  });
-  return row;
+  return files;
 };
 
 /**
  *
  * @param  {string} path [description]
- * @param  {bool} showPath [description]
  * @return {[type]}      [description]
  */
-const writeSystemTable = (path, showPath) => {
-  showPath = true;
-  const system = generateSystemSummary(path);
+const writeSystemTable = (path) => {
+  const system = new SystemSummary(path);
 
   const table = new AsciiTable();
-  let headings = ['File Name', 'Functions', 'State Changing', 'Constant'];
-  if (showPath) {
-    headings = ['File Name', 'Path', 'Functions', 'State Changing', 'Constant'];
-  }
-  table.setHeading(headings);
+  table.setHeading(
+    ['File Name', 'Path', 'Functions', 'State Changing', 'Constant']
+  );
 
-  // write the row for each file
+  // write the row values for each file
   system.files.forEach((file) => {
-    const counts = file.getFunctionCounts();
-    if(showPath) {
-      table.addRow(file.name, file.path, counts.totalCount, counts.stateChangingFunctions,
-        counts.constantFunctions);
-    } else {
-      table.addRow(file.name, counts.totalCount, counts.stateChangingFunctions,
-        counts.constantFunctions);
-    }
+    const counts = file.functionCounts;
+    table.addRow([file.name, file.path, counts.totalCount, counts.stateChangingFunctions,
+        counts.constantFunctions]);
   });
 
   // add another dashed line, followed by the totals
@@ -152,31 +106,21 @@ const writeSystemTable = (path, showPath) => {
   const dashes = rowOfDashes(table.__colMaxes);
   table.addRow(dashes);
 
-  const totals = system.getFunctionCounts();
+  const {totalCount, stateChangingFunctions, constantFunctions} = system.functionCounts;
+  table.addRow(
+    ['Totals', `${system.fileCount} files`, totalCount, stateChangingFunctions, constantFunctions]
+  );
 
-  let totalRow;
-  if (showPath) {
-    totalRow =
-      ['Totals', '--',totals.totalCount, totals.stateChangingFunctions, totals.constantFunctions];
-  } else {
-    totalRow = 
-      ['Totals', totals.totalCount, totals.stateChangingFunctions, totals.constantFunctions];
-  }
-  table.addRow(totalRow);
-
+  // Format the table to place numerical values in the center
+  [2,3,4].forEach((column) => table.setAlign(column, AsciiTable.CENTER));
   console.log(table.toString());
 };
 
 
-const generateDashboard = (contractsDir) => {
-  // handles both a contract and a directory
-  console.log('generateDashboard', contractsDir);
-};
-
 
 module.exports = {
-  generateSystemSummary,
-  generateFileSummary,
+  // generateFileSummary,
+  FileSummary,
+  SystemSummary,
   writeSystemTable,
-  generateDashboard,
 };
