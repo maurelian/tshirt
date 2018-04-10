@@ -1,4 +1,4 @@
-const { getAllFiles, countLinesInFile, rowOfDashes} = require('./utils.js');
+const { getAllFiles, countLinesInFile, rowOfDashes, getSolidityFiles} = require('./utils.js');
 const { getFunctionsInContract } = require('./parsing.js');
 const { log } = require('./color.js');
 const fs = require('fs');
@@ -34,7 +34,7 @@ const FileSummary = class {
 
 /**
  * SystemSummary class contains data pertaining to all the contracts in a system
- * * @param {array} fileSummarysArray An array of FileSummary objects
+ * * @param {array} path A directory path
  */
 const SystemSummary = class {
   constructor(path) {
@@ -60,26 +60,6 @@ const SystemSummary = class {
   }
 };
 
-
-/**
- * Generates a summary for a file, or array of files
- * @param  {string} contractsDir The path to a file or directory
- * @return {array}  An array with a list of solidity files
- */
-const getSolidityFiles = (path) => {
-  // handles both a contract and a directory
-  let files;
-  const dirStats = fs.statSync(path);
-  if (!dirStats.isDirectory()) {
-    // it's actually just a file
-    files = [path];
-  } else {
-    files = getAllFiles(path)
-      .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
-      .filter(fileName => fileName.split('.').pop() === 'sol');
-  }
-  return files;
-};
 
 /**
  *
@@ -116,11 +96,29 @@ const writeSystemTable = (path) => {
   console.log(table.toString());
 };
 
+const writeFileTable = (path) => {
+  // if (fs.statSync(path).isDirectory()) { throw new Error('expected a file, got a directory.'); }
+  const fileSummary = new FileSummary(path);
+
+  const table = new AsciiTable(path);
+  table.setHeading(
+    ['Function', 'Visibility', 'State Changing']
+  );
+
+  fileSummary.functions.forEach((func) => {
+    let name = func.isConstructor ? '_Constructor_' : func.name;
+    let isStateChanging = (['view', 'pure', 'constant'].indexOf(func.stateMutability) > -1)
+    table.addRow(name, func.visibility, isStateChanging ? '    Yes' : '    No');
+  })
+
+  // table.setAlign(2, AsciiTable.CENTER)
+  console.log(table.toString());
+}
 
 
 module.exports = {
-  // generateFileSummary,
   FileSummary,
   SystemSummary,
   writeSystemTable,
+  writeFileTable,
 };

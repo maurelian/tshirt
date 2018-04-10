@@ -17,6 +17,26 @@ function getAllFiles(dir) {
   return results;
 }
 
+/**
+ * Generates a summary for a file, or array of files
+ * @param  {string} contractsDir The path to a file or directory
+ * @return {array}  An array with a list of solidity files
+ */
+const getSolidityFiles = (path) => {
+  // handles both a contract and a directory
+  let files;
+  const dirStats = fs.statSync(path);
+  if (!dirStats.isDirectory()) {
+    // it's actually just a file
+    files = [path];
+  } else {
+    files = getAllFiles(path)
+      .filter(fileName => fileName.split('/').pop() !== 'Migrations.sol')
+      .filter(fileName => fileName.split('.').pop() === 'sol');
+  }
+  return files;
+};
+
 function countLinesInFile(fileName) {
   return new Promise((resolve, reject) => {
     let numLines;
@@ -46,8 +66,11 @@ const rowOfDashes = (lengths) => {
   return row;
 };
 
+
+
 module.exports = {
   getAllFiles,
+  getSolidityFiles,
   countLinesInFile,
   rowOfDashes,
 };
