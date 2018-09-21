@@ -7,13 +7,13 @@ A simple tool for assessing the scope of a solidity code audit.
 Aggregates data on all solidity files with in a directory, or in list 
 of files provided.
 
-[x] Counting Lines of Solidity Code
-[x] How many solidity files? 
-[ ] How many final contracts?
-[ ] How many functions are there? 
-    [ ] Which are public/external?
-    [ ] Which are private/internal
-    [ ] Which are state changing, or constant?
+* [x] Counting Lines of Solidity Code
+* [x] How many solidity files? 
+* [ ] How many final contracts?
+* [ ] How many functions are there? 
+* [ ] Which are public/external?
+* [ ] Which are private/internal
+* [ ] Which are state changing, or constant?
 
 `--each`
 
